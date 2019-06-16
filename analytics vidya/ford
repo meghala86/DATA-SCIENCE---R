@@ -1,0 +1,73 @@
+getwd()
+train <- read.csv('C:/Users/Meghala/Desktop/r studio files/fordTrain.csv',header = TRUE,sep= ',',na.strings = c(""))
+test  <- read.csv('C:/Users/Meghala/Desktop/r studio files/fordTest.csv',header = TRUE,sep= ',',na.string = c(""))
+library(Hmisc)                 
+describe(train)
+str(train)
+str(test)
+
+##### Data preparation
+
+train$IsAlert <- as.factor(train$IsAlert)
+test$IsAlert <-as.factor(test$IsAlert)
+train$E9 <- as.factor(train$E9)
+test$E9 <-as.factor(test$E9)
+train$E5 <-as.factor(train$E5)
+test$E5 <-as.factor(test$E5)
+########missing values
+
+summary(train)
+summary(test)
+sum(is.na(train))
+sum(is.na(test))
+#### To drop the variable P8,V7 AND v9
+
+train <- subset(train,select = -c(P8,V7,V9))
+test<- subset(train,select = -c(P8,V7,V9))
+
+####outliers & Skewness
+library(e1071)
+skewness(train$P1)
+boxplot(train$P1)
+describe(train)
+skewness(train$P2)
+skewness(train$P3)
+skewness(train$P4)
+skewness(train$P5)
+skewness(train$P6)
+skewness(train$P7)
+skewness(train$E1)
+skewness(train$E2)
+skewness(train$E3)
+skewness(train$E4)
+skewness(train$E5)         
+skewness(train$E6)
+skewness(train$E7)
+skewness(train$E8)
+skewness(train$E9)
+skewness(train$E10)
+skewness(train$E11)
+skewness(train$V1)
+skewness(train$V2)
+skewness(train$V3)
+skewness(train$V4)
+skewness(train$V5)
+skewness(train$V6)
+skewness(train$V8)
+skewness(train$V10)
+skewness(train$V11)
+
+##### Corelation
+correlation <-rcorr(as.matrix(train))
+cor_mat <-as.data.frame(correlation$r)
+write.csv(cor_mat,'cormat.csv')
+
+#### logistic regression
+names(train)
+model<- glm(IsAlert~P1+P2+P3+P4+P5+P6+P7+E1+E2+E3+E4+E5+E6+E7+E8+E9+E10+E11+V1+V2+V3+V4+V5+V6+V8+V10+V11,family = 'binomial',data = train)
+model
+summary(model)
+View(train)
+train$preds_lr <-predict(model,train,type ='response')
+train$preds_lr_class <-ifelse(train$preds_lr>=0.5,1,0)
+table(train$IsAlert,train$preds_lr_class)
