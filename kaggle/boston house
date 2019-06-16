@@ -1,0 +1,174 @@
+getwd()
+train <- read.csv('C:/Users/Meghala/Desktop/r studio files/HouseTrain.csv',header = TRUE,sep = ',',na.strings = c(""))
+summary(train)
+str(train)
+library(e1071)
+
+skewness(train$crim)
+skewness(train$zn)
+skewness(train$indus)
+skewness(train$chas)
+skewness(train$nox)
+skewness(train$age)
+skewness(train$dis)
+skewness(train$rad)
+skewness(train$tax)
+skewness(train$ptratio)
+skewness(train$black)
+skewness(train$lstat)
+skewness(train$medv)
+library(Hmisc)
+library(ggplot2)
+library(plyr)
+boxplot(train)
+### Bivariate analysis - Correlation
+cor(train$crim,train$medv)
+cor(train$zn,train$crim)
+cor(train$indus,train$chas)
+cor(train$rm,train$age)
+
+cor(train$age,train$black)
+cor(train$crim,train$black)
+cor(train$dis,train$rad)
+cor(train$tax,train$medv)
+cor(train$ptratio,train$black)
+
+cor(train$tax,train$rad)
+cor(train)
+
+
+train$chas <- as.factor(train$chas)
+
+str(train)
+correlation_matrix <- cor(train)
+write.csv(correlation_matrix,"cormat.csv")
+
+
+summary(train$crim)
+hist(train$crim)
+train$crim <- log(train$crim)
+summary(train$crim)
+skewness(train$crim)
+hist(train$crim)
+
+
+summary(train$zn)
+hist(train$zn)
+train$zn <-ifelse(train$zn == '0',mean(train$zn),train$zn)
+train$zn <-1/(train$zn)
+train$zn <- log10(train$zn)
+summary(train$zn)
+skewness(train$zn)
+
+summary(train$black)
+skewness(train$black)
+hist(train$black)
+train$black <-1/(train$black)
+summary(train$black)
+skewness(train$black)
+
+names(train)
+linear_model<- lm(medv~crim+zn+chas+nox+rm+age+dis+rad+tax+ptratio+black+lstat,data = train)
+linear_model 
+train$l
+summary(linear_model)
+train$pred <- predict(linear_model,train)
+
+train$resid <- train$medv - train$pred
+
+train$sqresid <- train$resid*train$resid
+mean_squared_error <- mean(train$sqresid)
+root_mean_squared_error <- sqrt(mean_squared_error)
+
+#####Decision Trees
+library(party)
+png(file = 'decision_tree.png')
+names(train)
+model_tree <- ctree(medv~crim+zn+indus+chas+nox+rm+age+dis+rad+tax+ptratio+black+lstat,data=train)
+
+plot(model_tree)
+dev.off()
+summary(model_tree)
+model_tree
+
+### confusion matrix , decision tree####
+
+train$preds_model_tree<- predict(model_tree,train)
+train$resid <- train$medv - train$pred
+
+train$sqresid <- train$resid*train$resid
+mean_squared_error <- mean(train$sqresid)
+root_mean_squared_error <- sqrt(mean_squared_error)
+
+
+
+########random forest
+names(train)
+library(randomForest)
+model_rf <-randomForest(medv~crim+zn+indus+chas+nox+rm+age+dis+rad+tax+ptratio+black+lstat,data=train)
+model_rf <-randomForest(medv~crim+zn+indus+chas+nox+rm+age+dis+rad+tax+ptratio+black+lstat,ntree=1000,data=train)
+model_rf
+train$pred <- predict(model_rf,train)
+
+train$resid <- train$medv - train$pred
+
+train$sqresid <- train$resid*train$resid
+mean_squared_error <- mean(train$sqresid)
+root_mean_squared_error <- sqrt(mean_squared_error)
+
+
+##### svm
+
+model_svm <- svm(medv~crim+zn+indus+chas+nox+rm+age+dis+rad+tax+ptratio+black+lstat,kernal ='polynomial',cost=2,data=train)
+model_svm
+train$pred_svm <-predict(model_svm,train)
+rmse_svm <-sqrt((mean(train$medv-train$pred_svm)^2))
+print(rmse_svm)
+
+
+###### Test data
+
+test<- read.csv('C:/Users/Meghala/Desktop/r studio files/Housetest.csv',header = TRUE,sep = ',',na.strings = c(""))
+summary(test)
+str(test)
+train$chas <-as.factor(train$chas)
+skewness(test$crim)
+skewness(test$zn)
+skewness(test$indus)
+skewness(test$chas)
+skewness(test$nox)
+skewness(test$age)
+skewness(test$dis)
+skewness(test$rad)
+skewness(test$tax)
+skewness(test$ptratio)
+skewness(test$black)
+skewness(test$lstat)
+
+library(Hmisc)
+library(ggplot2)
+library(plyr)
+boxplot(test)
+### Bivariate analysis - Correlation
+
+cor(test$zn,test$crim)
+cor(test$indus,test$chas)
+cor(test$rm,test$age)
+
+cor(test$age,test$black)
+cor(test$crim,test$black)
+cor(test$dis,test$rad)
+cor(test$ptratio,test$black)
+
+cor(test$tax,test$rad)
+cor(test)
+
+
+test$chas <- as.factor(test$chas)
+
+str(test)
+correlation_matrix <- cor(test)
+write.csv(correlation_matrix,"cormat.csv")
+
+test$medv <- predict(model_rf,test)
+write.csv(test,"medvtest.csv")
