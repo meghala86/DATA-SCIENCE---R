@@ -1,0 +1,91 @@
+setwd
+getwd()
+train <- read.csv('C:/Users/Meghala/Desktop/r studio files/Titanic train.csv',header= TRUE,sep = ',',na.strings = c(""))
+train
+summary(train)str(train)
+boxplot(train$Age)
+boxplot(train$Fare)
+skewness(train$Age)
+library(e1071)
+library(Hmisc)
+skewness(train$Fare)
+describe(train)
+
+## Convert to the factor 
+train$Survived <- as.factor(train$Survived)
+train$Pclass <- as.factor(train$Pclass)
+str(train)
+
+##Missisng Value Imputation(Age)
+
+train$Age <- ifelse(is.na(train$Age),median(train$Age,na.rm=TRUE),train$Age)
+sum(is.na(train$Age))
+
+##Missing value imputation - Embarked
+sum(is.na(train$Embarked))
+table(train$Embarked)
+train$Embarked <- as.character(train$Embarked)
+train$Embarked <- ifelse(is.na(train$Embarked),'S',train$Embarked)
+train$Embarked <-as.factor(train$Embarked)
+
+train$log <- log(train$Fare)
+
+skewness(train$Age)
+cor(train$Age,train$Fare)
+cor(train$SibSp,train$Parch)
+
+str(train$Survived)
+names(train)
+model<- glm(Survived~Pclass+Sex+Age+SibSp+Parch+Fare+Embarked,family = 'binomial',data = train)
+summary(model)
+train$preds <-predict(model,train,type = 'response')
+View(train$preds)
+train$outocme <-ifelse(train$preds>=0.5,1,0)
+
+table(train$Survived,train$outocme)  
+train$ln_fare <-log(train$Fare)
+
+model2<- glm(Survived~Pclass+Sex+Age+SibSp+Parch+Fare+ln_fare
+             +Embarked,family = 'binomial',data = train)
+
+
+######################################################Decison trees---#############
+
+install.packages('party')
+library(party)
+png(file = 'decision_tree.png')
+names(train)
+model_tree <- ctree(Survived~Pclass+Sex+Age+SibSp+Parch+Fare+Embarked,data=train)
+
+plot(model_tree)
+dev.off()
+summary(model_tree)
+model_tree
+### confusion matrix , decision tree####
+
+train$preds_modeltree<- predict(model_tree,train)
+table(train$Survived,train$preds_modeltree)
+
+########Random Forest#################
+
+install.packages('randomforest')
+library(randomForest)
+
+model_rf <- randomForest(Survived~Pclass+Sex+Age+SibSp+Parch+Fare+Embarked,data=train)
+model_rf <- randomForest(Survived~Pclass+Sex+Age+SibSp+Parch+Fare+Embarked,ntree = 1000,data=train)
+model_rf
+
+library(e1071)
+model_svm <- svm(Survived~Pclass+Sex+Age+SibSp+Parch+Fare+Embarked,data=train)
+model_svm
+train$svm_preds <-predict(model_svm,train)
+names(train)
+
+train1 <- subset(train,select = -c(PassengerId,Name,Ticket,Cabin))
+train1$preds <-predict(model_svm,train1)
+table(train$Survived,train1$preds)
+
+
+model_svm1 <- svm(Survived~Pclass+Sex+Age+SibSp+Parch+Fare+Embarked,cost=5,data=train)
+model_svm1
+train1$preds <-predict(model_svm1,train1)
